@@ -11,8 +11,8 @@ describe('bitcoinjs-lib (basic)', function() {
       .onCall(0).returns(new Buffer('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz'))
 
     // generate random key
-    var key = bitcoin.ECKey.makeRandom()
-    var address = key.pub.getAddress().toString()
+    var key = bitcoin.ECPair.makeRandom()
+    var address = key.getAddress().toString()
 
     assert.equal(address, '1F5VhMHukdnUES9kfXqzPzMeF1GPHKiF64')
   }))
@@ -21,20 +21,21 @@ describe('bitcoinjs-lib (basic)', function() {
     var hash = bitcoin.crypto.sha256('correct horse battery staple')
     var d = bigi.fromBuffer(hash)
 
-    var key = new bitcoin.ECKey(d)
+    var key = new bitcoin.ECPair(d)
+    var address = key.getAddress().toString()
 
-    assert.equal(key.pub.getAddress().toString(), '1C7zdTfnkzmr13HfA2vNm5SJYRK6nEKyq8')
+    assert.equal(address, '1C7zdTfnkzmr13HfA2vNm5SJYRK6nEKyq8')
   })
 
   it('can import an address via WIF', function() {
-    var key = bitcoin.ECKey.fromWIF('Kxr9tQED9H44gCmp6HAdmemAzU3n84H3dGkuWTKvE23JgHMW8gct')
-    var address = key.pub.getAddress().toString()
+    var key = bitcoin.ECPair.fromWIF('Kxr9tQED9H44gCmp6HAdmemAzU3n84H3dGkuWTKvE23JgHMW8gct')
+    var address = key.getAddress().toString()
 
     assert.equal(address, '19AAjaTUbRjQCMuVczepkoPswiZRhjtg31')
   })
 
   it('can create a Transaction', function() {
-    var key = bitcoin.ECKey.fromWIF("L1uyy5qTuGrVXrmrsvHWHgVzW9kKdrp27wBC7Vs6nZDTF2BRUVwy")
+    var key = bitcoin.ECPair.fromWIF("L1uyy5qTuGrVXrmrsvHWHgVzW9kKdrp27wBC7Vs6nZDTF2BRUVwy")
     var tx = new bitcoin.Transaction()
 
     tx.addInput("aa94ab02c182214f090e99a0d57021caffd0f195a81c24602b1028b130b63e31", 0)
