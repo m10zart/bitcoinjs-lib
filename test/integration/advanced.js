@@ -7,10 +7,10 @@ var helloblock = require('helloblock-js')({
 
 describe('bitcoinjs-lib (advanced)', function() {
   it('can sign a Bitcoin message', function() {
-    var key = bitcoin.ECKey.fromWIF('5KYZdUEo39z3FPrtuX2QbbwGnNP5zTd7yyr2SC1j299sBCnWjss')
+    var keyPair = bitcoin.ECPair.fromWIF('5KYZdUEo39z3FPrtuX2QbbwGnNP5zTd7yyr2SC1j299sBCnWjss')
     var message = 'This is an example of a signed message.'
 
-    var signature = bitcoin.message.sign(key, message)
+    var signature = bitcoin.message.sign(keyPair, message)
     assert.equal(signature.toString('base64'), 'G9L5yLFjti0QTHhPyFrZCT1V/MMnBtXKmoiKDZ78NDBjERki6ZTQZdSMCtkgoNmp17By9ItJr8o7ChX0XxY91nk=')
   })
 
@@ -23,17 +23,17 @@ describe('bitcoinjs-lib (advanced)', function() {
   })
 
   it('can generate a single-key stealth address', function() {
-    var receiver = bitcoin.ECKey.fromWIF('5KYZdUEo39z3FPrtuX2QbbwGnNP5zTd7yyr2SC1j299sBCnWjss')
+    var receiver = bitcoin.ECPair.fromWIF('5KYZdUEo39z3FPrtuX2QbbwGnNP5zTd7yyr2SC1j299sBCnWjss')
 
     // XXX: ephemeral, must be random (and secret to sender) to preserve privacy
-    var sender = bitcoin.ECKey.fromWIF('Kxr9tQED9H44gCmp6HAdmemAzU3n84H3dGkuWTKvE23JgHMW8gct')
+    var sender = bitcoin.ECPair.fromWIF('Kxr9tQED9H44gCmp6HAdmemAzU3n84H3dGkuWTKvE23JgHMW8gct')
 
-    var G = bitcoin.ECKey.curve.G
+    var G = bitcoin.ECPair.curve.G
     var d = receiver.d // secret (receiver only)
-    var Q = receiver.pub.Q // shared
+    var Q = receiver.Q // shared
 
     var e = sender.d // secret (sender only)
-    var P = sender.pub.Q // shared
+    var P = sender.Q // shared
 
     // derived shared secret
     var eQ = Q.multiply(e) // sender
@@ -49,7 +49,7 @@ describe('bitcoinjs-lib (advanced)', function() {
     assert.deepEqual(QprimeR.getEncoded(), QprimeS.getEncoded())
 
     // derived shared-secret address
-    var address = new bitcoin.ECPubKey(QprimeS).getAddress().toString()
+    var address = new bitcoin.ECPair(null, QprimeS).getAddress().toString()
 
     assert.equal(address, '1EwCNJNZM5q58YPPTnjR1H5BvYRNeyZi47')
   })
@@ -60,8 +60,8 @@ describe('bitcoinjs-lib (advanced)', function() {
   it('can create an OP_RETURN transaction', function(done) {
     this.timeout(20000)
 
-    var key = bitcoin.ECKey.fromWIF("L1uyy5qTuGrVXrmrsvHWHgVzW9kKdrp27wBC7Vs6nZDTF2BRUVwy")
-    var address = key.pub.getAddress(bitcoin.networks.testnet).toString()
+    var keyPair = bitcoin.ECPair.makeRandom({ network: bitcoin.networks.testnet })
+    var address = keyPair.getAddress().toString()
 
     helloblock.faucet.withdraw(address, 2e4, function(err) {
       if (err) return done(err)
@@ -82,7 +82,7 @@ describe('bitcoinjs-lib (advanced)', function() {
 
         tx.addInput(unspent.txHash, unspent.index)
         tx.addOutput(dataScript, 1000)
-        tx.sign(0, key)
+        tx.sign(0, keyPair)
 
         helloblock.transactions.propagate(tx.build().toHex(), function(err) {
           if (err) return done(err)
