@@ -53,7 +53,7 @@ From the repo:
 ### Browser
 
 If you're familiar with how to use browserify, ignore this and proceed normally.
-These steps are advisory only and allow you to use the `bitcoinjs-lib` to its full extent.
+These steps are advisory only and allow you to use the API to its full extent.
 
 [Browserify](https://github.com/substack/node-browserify) is assumed to be installed for these steps.
 
