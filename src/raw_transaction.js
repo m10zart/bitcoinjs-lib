@@ -110,6 +110,88 @@ RawTransaction.prototype.addOutput = function(scriptPubKey, value) {
   }) - 1)
 }
 
+RawTransaction.prototype.clone = function () {
+  var newTx = new RawTransaction()
+  newTx.version = this.version
+  newTx.locktime = this.locktime
+
+  newTx.ins = this.ins.map(function(txin) {
+    return {
+      hash: txin.hash,
+      index: txin.index,
+      script: txin.script,
+      sequence: txin.sequence
+    }
+  })
+
+  newTx.outs = this.outs.map(function(txout) {
+    return {
+      script: txout.script,
+      value: txout.value
+    }
+  })
+
+  return newTx
+}
+
+/**
+ * Hash transaction for signing a specific input.
+ *
+ * Bitcoin uses a different hash for each signed transaction input. This
+ * method copies the transaction, makes the necessary changes based on the
+ * hashType, serializes and finally hashes the result. This hash can then be
+ * used to sign the transaction input in question.
+ */
+RawTransaction.prototype.hashForSignature = function(inIndex, prevOutScript, hashType) {
+  enforceType('Number', inIndex)
+  enforceType(Script, prevOutScript)
+  enforceType('Number', hashType)
+
+  assert(inIndex >= 0, 'Invalid vin index')
+  assert(inIndex < this.ins.length, 'Invalid vin index')
+
+  var txTmp = this.clone()
+  var hashScript = prevOutScript.without(opcodes.OP_CODESEPARATOR)
+
+  // Blank out other inputs' signatures
+  txTmp.ins.forEach(function(txin) {
+    txin.script = Script.EMPTY
+  })
+  txTmp.ins[inIndex].script = hashScript
+
+  var hashTypeModifier = hashType & 0x1f
+  if (hashTypeModifier === RawTransaction.SIGHASH_NONE) {
+    assert(false, 'SIGHASH_NONE not yet supported')
+
+  } else if (hashTypeModifier === RawTransaction.SIGHASH_SINGLE) {
+    assert(false, 'SIGHASH_SINGLE not yet supported')
+
+  }
+
+  if (hashType & RawTransaction.SIGHASH_ANYONECANPAY) {
+    assert(false, 'SIGHASH_ANYONECANPAY not yet supported')
+  }
+
+  var hashTypeBuffer = new Buffer(4)
+  hashTypeBuffer.writeInt32LE(hashType, 0)
+
+  var buffer = Buffer.concat([txTmp.toBuffer(), hashTypeBuffer])
+  return crypto.hash256(buffer)
+}
+
+RawTransaction.prototype.getHash = function () {
+  return crypto.hash256(this.toBuffer())
+}
+
+RawTransaction.prototype.getId = function () {
+  // TxHash is little-endian, we need big-endian
+  return bufferutils.reverse(this.getHash()).toString('hex')
+}
+
+RawTransaction.prototype.setInputScript = function(index, script) {
+  this.ins[index].script = script
+}
+
 RawTransaction.prototype.toBuffer = function () {
   var txInSize = this.ins.reduce(function(a, x) {
     return a + (40 + bufferutils.varIntSize(x.script.buffer.length) + x.script.buffer.length)
@@ -170,88 +252,6 @@ RawTransaction.prototype.toBuffer = function () {
 
 RawTransaction.prototype.toHex = function() {
   return this.toBuffer().toString('hex')
-}
-
-/**
- * Hash transaction for signing a specific input.
- *
- * Bitcoin uses a different hash for each signed transaction input. This
- * method copies the transaction, makes the necessary changes based on the
- * hashType, serializes and finally hashes the result. This hash can then be
- * used to sign the transaction input in question.
- */
-RawTransaction.prototype.hashForSignature = function(inIndex, prevOutScript, hashType) {
-  enforceType('Number', inIndex)
-  enforceType(Script, prevOutScript)
-  enforceType('Number', hashType)
-
-  assert(inIndex >= 0, 'Invalid vin index')
-  assert(inIndex < this.ins.length, 'Invalid vin index')
-
-  var txTmp = this.clone()
-  var hashScript = prevOutScript.without(opcodes.OP_CODESEPARATOR)
-
-  // Blank out other inputs' signatures
-  txTmp.ins.forEach(function(txin) {
-    txin.script = Script.EMPTY
-  })
-  txTmp.ins[inIndex].script = hashScript
-
-  var hashTypeModifier = hashType & 0x1f
-  if (hashTypeModifier === RawTransaction.SIGHASH_NONE) {
-    assert(false, 'SIGHASH_NONE not yet supported')
-
-  } else if (hashTypeModifier === RawTransaction.SIGHASH_SINGLE) {
-    assert(false, 'SIGHASH_SINGLE not yet supported')
-
-  }
-
-  if (hashType & RawTransaction.SIGHASH_ANYONECANPAY) {
-    assert(false, 'SIGHASH_ANYONECANPAY not yet supported')
-  }
-
-  var hashTypeBuffer = new Buffer(4)
-  hashTypeBuffer.writeInt32LE(hashType, 0)
-
-  var buffer = Buffer.concat([txTmp.toBuffer(), hashTypeBuffer])
-  return crypto.hash256(buffer)
-}
-
-RawTransaction.prototype.getHash = function () {
-  return crypto.hash256(this.toBuffer())
-}
-
-RawTransaction.prototype.getId = function () {
-  // TxHash is little-endian, we need big-endian
-  return bufferutils.reverse(this.getHash()).toString('hex')
-}
-
-RawTransaction.prototype.clone = function () {
-  var newTx = new RawTransaction()
-  newTx.version = this.version
-  newTx.locktime = this.locktime
-
-  newTx.ins = this.ins.map(function(txin) {
-    return {
-      hash: txin.hash,
-      index: txin.index,
-      script: txin.script,
-      sequence: txin.sequence
-    }
-  })
-
-  newTx.outs = this.outs.map(function(txout) {
-    return {
-      script: txout.script,
-      value: txout.value
-    }
-  })
-
-  return newTx
-}
-
-RawTransaction.prototype.setInputScript = function(index, script) {
-  this.ins[index].script = script
 }
 
 module.exports = RawTransaction
