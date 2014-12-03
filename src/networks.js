@@ -124,6 +124,16 @@ var networks = {
     dustThreshold: 546, // https://github.com/zetacoin/zetacoin/blob/master/src/core.h#L159
     feePerKb: 10000, // https://github.com/zetacoin/zetacoin/blob/master/src/main.cpp#L54
     estimateFee: estimateFee('zetacoin')
+  },
+  hyper: {
+    magicPrefix: '\x18HYPER Signed Message:\n',
+    pubKeyHash: 0xA8,
+    scriptHash: 0x40,
+    wif: 0x28,
+    dustThreshold: 0, // TODO
+    dustSoftThreshold: 10000, // TODO
+    feePerKb: 10000, // TODO
+    estimateFee: estimateFee('hyper')
   }
 }
 
